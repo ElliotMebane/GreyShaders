@@ -11,7 +11,6 @@ void main()
 {
     vec3 normalColor = texture2D( u_texture, v_texCoord ).rgb;
 
-	// float mono = sqrt( 0.299 * normalColor.r * normalColor.r + 0.587 * normalColor.g * normalColor.g + 0.114 * normalColor.b * normalColor.b );
     float mono = sqrt( dot( ( normalColor * normalColor ), vec3( 0.299, 0.587, 0.114 ) ) );
 
     gl_FragColor.rgb = vec3( mono );

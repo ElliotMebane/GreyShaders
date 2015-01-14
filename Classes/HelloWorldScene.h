@@ -8,9 +8,14 @@ USING_NS_CC;
 class HelloWorld : public cocos2d::Layer
 {
 private:
-	const float _kCornerTapFactor = 0.5f;
+	struct ShaderDataProvider {
+		ShaderDataProvider(const std::string& pLabel, const std::string& pPath) :
+		    label(pLabel), path(pPath) {}
 
-	std::vector< std::string > _shaderStrings;
+		std::string label;
+		std::string path;
+	};
+	const float _kCornerTapFactor = 0.5f;
 	std::vector< GLProgramState* > _shaderProgramStates;
 	Sprite* _spriteWithShader;
 	int _shaderIndex;
@@ -19,6 +24,7 @@ private:
 	GLProgramState* _defaultShaderProgramState;
 	LabelTTF* _label;
 	std::string _defaultTitle;
+	std::vector< ShaderDataProvider > _shaderData;
 
 	GLProgramState* _makeShaderProgramState( std::string pRelativePath );
 	void _setNextShader( const int pSelector );

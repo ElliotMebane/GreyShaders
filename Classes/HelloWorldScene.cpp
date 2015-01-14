@@ -28,7 +28,7 @@ bool HelloWorld::init()
     }
     
 	_shaderIndex = 0;
-	_defaultTitle = "Greyscale Shaders — Top-Left/Right Changes Shaders, Bottom resets.";
+	_defaultTitle = "Greyscale Shader Samples\nTap the Top-Left/Top-Right to Change Shader.\nTap Bottom to Show Full Color.";
 
     _visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
@@ -57,7 +57,7 @@ bool HelloWorld::init()
     // add a label shows "Hello World"
     // create and initialize a label
 
-    _label = LabelTTF::create( _defaultTitle, "Arial", 24);
+    _label = LabelTTF::create( _defaultTitle, "Arial", 32);
     _label->enableStroke( Color3B( 0, 0, 1.0 ), 4, true );
     _label->enableShadow( Size( 4.0, -4.0 ), 1.0, 5.0, true );
 
@@ -76,17 +76,44 @@ bool HelloWorld::init()
         _spriteWithShader->setPosition( Vec2( origin.x + _spriteWithShader->getBoundingBox().size.width / 2, origin.y + _spriteWithShader->getBoundingBox().size.height / 2 ) );
         this->addChild( _spriteWithShader );
 
-        _shaderStrings.push_back( "shaders/LuminanceA.fsh" );
-        _shaderStrings.push_back( "shaders/LuminanceAA.fsh" );
-        _shaderStrings.push_back( "shaders/LuminanceB.fsh" );
-        _shaderStrings.push_back( "shaders/LuminanceBB.fsh" );
-        _shaderStrings.push_back( "shaders/LuminanceC.fsh" );
+        //http://www.roguish.com/blog/?p=775
+        ShaderDataProvider tData[] {
+        			ShaderDataProvider( "1: Basic\n0.333, 0.333, 0.333", "shaders/LuminanceEqualWeight.fsh" ),
+        			ShaderDataProvider( "2: Basic\n0.212655, 0.715158, 0.072187", "shaders/LuminanceA.fsh" ),
+        			ShaderDataProvider( "3: Square/sqrt\n0.212655, 0.715158, 0.072187", "shaders/LuminanceAA.fsh" ),
+        			ShaderDataProvider( "4: Basic\n0.299, 0.587, 0.114", "shaders/LuminanceB.fsh" ),
+        			ShaderDataProvider( "5: Square/sqrt\n0.299, 0.587, 0.114", "shaders/LuminanceBB.fsh" ),
+        			ShaderDataProvider( "6: Gamma Inverse/Re-Apply\n0.212655, 0.715158, 0.072187", "shaders/LuminanceC.fsh" ),
+        			ShaderDataProvider( "7: Gamma Inverse/Re-Apply\n0.299, 0.587, 0.114", "shaders/LuminanceCC.fsh" )
+        };
 
-        auto it = _shaderStrings.begin();
-        auto itEnd = _shaderStrings.end();
+        // populate _shaderData from the tData array
+        // http://www.cplusplus.com/reference/vector/vector/vector/
+        // location of start of array, location of start of array + number of elements in array
+        // (end? how is the size of each element taken into account?) I think with arrays, adding ints adds bytes of the length of one element in the array.
+        // http://stackoverflow.com/questions/8906545/how-to-initialize-a-vector-in-c
+//        _shaderData = std::vector< ShaderDataProvider > ( tData, tData + sizeof( tData ) / sizeof( ShaderDataProvider ) );
+        // this works: std::begin(tData), std::end(tData)
+        // we're forcing the array created with [] syntax to be seen as a std::array container, with begin/end methods
+        _shaderData = std::vector< ShaderDataProvider >( std::begin(tData), std::end(tData) );
+        // doesn't work. array doesn't seem to have begin/end methods, though it should:
+        // http://www.cplusplus.com/reference/array/array/?kw=array
+        // oh, ... This class merely adds a layer of member and global functions to it, so that arrays can be used as standard containers.
+        // still, can't instatntiate a std::array
+        //         // http://stackoverflow.com/questions/14178264/c11-correct-stdarray-initialization
+        // std::vector< ShaderDataProvider > _shaderData( tData.begin(), tData.end() );
+
+//        _shaderData.push_back ( ShaderDataProvider( "1: Basic 0.212655, 0.715158, 0.072187", "shaders/LuminanceA.fsh" ) );
+//        _shaderData.push_back ( ShaderDataProvider( "2: Basic 0.212655, 0.715158, 0.072187", "shaders/LuminanceAA.fsh" ) );
+//        _shaderData.push_back ( ShaderDataProvider( "3: Basic 0.212655, 0.715158, 0.072187", "shaders/LuminanceB.fsh" ) );
+//        _shaderData.push_back ( ShaderDataProvider( "4: Basic 0.212655, 0.715158, 0.072187", "shaders/LuminanceBB.fsh" ) );
+//        _shaderData.push_back ( ShaderDataProvider( "5: Basic 0.212655, 0.715158, 0.072187", "shaders/LuminanceC.fsh" ) );
+
+        auto it = _shaderData.begin();
+        auto itEnd = _shaderData.end();
         for (; it != itEnd; it++ )
 		{
-        	_shaderProgramStates.push_back( _makeShaderProgramState( *it ) );
+        	_shaderProgramStates.push_back( _makeShaderProgramState( it->path ) );
 		}
 
         _defaultShaderProgramState = _makeShaderProgramState( "shaders/NoEffectShader.fsh" );
@@ -132,8 +159,8 @@ void HelloWorld::_setNextShader( const int pSelector )
 		}
 		else
 		{
-			_spriteWithShader->setGLProgramState( _shaderProgramStates.at( _shaderIndex ) );
-			_label->setString( _shaderStrings.at( _shaderIndex ) );
+			_spriteWithShader->setGLProgramState( _shaderProgramStates[ _shaderIndex ] );
+			_label->setString( _shaderData[ _shaderIndex ].label );
 		}
 	}
 	else
@@ -147,8 +174,8 @@ void HelloWorld::_setNextShader( const int pSelector )
 		{
 			_shaderIndex = _shaderProgramStates.size() - 1;
 		}
-		_spriteWithShader->setGLProgramState( _shaderProgramStates.at( _shaderIndex ) );
-		_label->setString( _shaderStrings.at( _shaderIndex ) );
+		_spriteWithShader->setGLProgramState( _shaderProgramStates[ _shaderIndex ] );
+		_label->setString( _shaderData[ _shaderIndex ].label );
 	}
 }
 
